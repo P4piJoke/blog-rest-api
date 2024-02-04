@@ -2,8 +2,10 @@ package com.pp4jk.blogrestapi.service.impl;
 
 import com.pp4jk.blogrestapi.dto.PostDto;
 import com.pp4jk.blogrestapi.dto.PostResponse;
+import com.pp4jk.blogrestapi.entity.Category;
 import com.pp4jk.blogrestapi.entity.Post;
 import com.pp4jk.blogrestapi.exception.ResourceNotFoundException;
+import com.pp4jk.blogrestapi.repository.CategoryRepository;
 import com.pp4jk.blogrestapi.repository.PostRepository;
 import com.pp4jk.blogrestapi.service.PostService;
 import lombok.RequiredArgsConstructor;
@@ -21,12 +23,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PostServiceImpl implements PostService {
 
-    private final PostRepository repository;
+    private final PostRepository postRepository;
+    private final CategoryRepository categoryRepository;
     private final ModelMapper mapper;
 
     @Override
     public PostDto createPost(PostDto postDto) {
-        Post newPost = repository.save(mapToEntity(postDto));
+
+        Category category = categoryRepository.findById(postDto.getCategoryId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Category", "id", postDto.getCategoryId())
+                );
+        Post post = mapToEntity(postDto);
+        post.setCategory(category);
+
+        Post newPost = postRepository.save(post);
 
         return mapToDto(newPost);
     }
@@ -41,46 +52,64 @@ public class PostServiceImpl implements PostService {
 
         Pageable pageable = PageRequest.of(pageNo, pageSize, sort);
 
-        Page<Post> posts = repository.findAll(pageable);
+        Page<Post> posts = postRepository.findAll(pageable);
 
         List<Post> listOfPosts = posts.getContent();
 
-        List<PostDto> content = listOfPosts.
-                stream()
-                .map(this::mapToDto)
-                .collect(Collectors.toList());
+        List<PostDto> content = mapToResponse(listOfPosts);
 
         return mapToPostResponse(content, posts);
     }
 
     @Override
     public PostDto getPostById(Long id) {
-        Post post = repository.findById(id).orElseThrow(
+        Post post = postRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", id)
         );
         return mapToDto(post);
     }
 
     @Override
+    public List<PostDto> getPostsByCategoryId(Long categoryId) {
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Category", "id", categoryId)
+                );
+
+        List<Post> postList = postRepository.findByCategoryId(categoryId);
+
+        return mapToResponse(postList);
+    }
+
+    @Override
     public PostDto updatePost(PostDto postDto, Long id) {
-        Post post = repository.findById(id).orElseThrow(
+        Category category = categoryRepository.findById(postDto.getCategoryId())
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Category", "id", postDto.getCategoryId())
+                );
+        Post post = postRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", id)
         );
 
         post.setTitle(postDto.getTitle());
         post.setDescription(postDto.getDescription());
         post.setContent(postDto.getContent());
+        post.setCategory(category);
 
-        Post updatedPost = repository.save(post);
+        Post updatedPost = postRepository.save(post);
         return mapToDto(updatedPost);
     }
 
     @Override
     public void deletePost(Long id) {
-        Post post = repository.findById(id).orElseThrow(
+        Post post = postRepository.findById(id).orElseThrow(
                 () -> new ResourceNotFoundException("Post", "id", id)
         );
-        repository.delete(post);
+        postRepository.delete(post);
+    }
+
+    private List<PostDto> mapToResponse(List<Post> postList) {
+        return postList.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 
     private PostResponse mapToPostResponse(List<PostDto> content, Page<Post> posts) {
@@ -95,23 +124,10 @@ public class PostServiceImpl implements PostService {
     }
 
     private Post mapToEntity(PostDto dto) {
-        Post converted = mapper.map(dto, Post.class);
-
-//        Post converted = new Post();
-//        converted.setTitle(dto.getTitle());
-//        converted.setDescription(dto.getDescription());
-//        converted.setContent(dto.getContent());
-        return converted;
+        return mapper.map(dto, Post.class);
     }
 
     private PostDto mapToDto(Post entity) {
-        PostDto converted = mapper.map(entity, PostDto.class);
-
-//        PostDto converted = new PostDto();
-//        converted.setId(entity.getId());
-//        converted.setTitle(entity.getTitle());
-//        converted.setDescription(entity.getDescription());
-//        converted.setContent(entity.getContent());
-        return converted;
+        return mapper.map(entity, PostDto.class);
     }
 }

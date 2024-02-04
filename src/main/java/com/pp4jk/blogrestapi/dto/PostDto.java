@@ -1,5 +1,6 @@
 package com.pp4jk.blogrestapi.dto;
 
+import com.pp4jk.blogrestapi.entity.Category;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -22,4 +23,5 @@ public class PostDto {
     @NotBlank(message = "Must not be empty")
     private String content;
     private Set<CommentDto> comments;
+    private Long categoryId;
 }
