@@ -1,0 +1,45 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  run-unit-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'corretto'
+          java-version: '17'
+          cache: 'maven'
+
+      - name: Unit Test
+        run: mvn clean package
+
+      - name: Rename the artifact
+        run: cp target/*jar blog-api-${{ github.sha }}.jar
+
+      - name: Save the artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: blog-api
+          path: blog-api-${{github.sha}}.jar
+
+  fake-deploy:
+    runs-on: ubuntu-latest
+    needs: run-unit-test
+    steps:
+      - name: Get the artifact
+        uses: actions/download-artifact@master
+        with:
+          name: blog-api
+
+      - name: Fake deploy
+        run: ls blog-api*.jar
