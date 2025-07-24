@@ -2,7 +2,7 @@
 [![Deploy](https://github.com/P4piJoke/blog-rest-api/actions/workflows/deploy.yml/badge.svg)](https://github.com/P4piJoke/blog-rest-api/actions/workflows/deploy.yml)
 
 # Blog REST API
-Add new text 2
+
 The Blog REST API is a web service that allows users to create, manage, and interact with blog content easily. It includes endpoints for essential entities such as Post, Category, and Comment. Users can create categorized posts for organized content management and engage in discussions by commenting on posts. Role-based access control allows administrators to regulate user permissions, ensuring security and integrity. The API's RESTful design promotes easy integration into diverse platforms, enhancing the blogging experience for both creators and readers.
 
 
